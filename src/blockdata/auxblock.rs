@@ -206,16 +206,16 @@ impl AuxpowBlockHeader {
 /// proof of work.
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct AuxBlock {
+pub struct AuxpowBlock {
     /// The block header
     pub header: AuxpowBlockHeader,
     /// List of transactions contained in the block
     pub txdata: Vec<Transaction>
 }
 
-impl_consensus_encoding!(AuxBlock, header, txdata);
+impl_consensus_encoding!(AuxpowBlock, header, txdata);
 
-impl AuxBlock {
+impl AuxpowBlock {
     /// Returns the block hash.
     pub fn block_hash(&self) -> BlockHash {
         self.header.block_hash()
