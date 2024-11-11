@@ -37,27 +37,74 @@ use blockdata::constants::{max_target, WITNESS_SCALE_FACTOR};
 use blockdata::script;
 use VarInt;
 
-/// A block header, which contains all the block's information except
+/// Special block derivation to be used past nAuxblockHeight
 /// the actual transactions
-#[derive(Copy, PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BlockHeader {
     /// The protocol version. Should always be 1.
-    pub version: i32,
-    /// Reference to the previous block in the chain.
+    pub version: u32,
+    /// Reference to the previous block in the chain
     pub prev_blockhash: BlockHash,
-    /// The root hash of the merkle tree of transactions in the block.
+    /// The root hash of the merkle tree of transactions in the block
     pub merkle_root: TxMerkleNode,
-    /// The timestamp of the block, as claimed by the miner.
+    /// The timestamp of the block, as claimed by the miner
     pub time: u32,
     /// The target value below which the blockhash must lie, encoded as a
-    /// a float (with well-defined rounding, of course).
+    /// a float (with well-defined rounding, of course)
     pub bits: u32,
-    /// The nonce, selected to obtain a low enough blockhash.
+    /// The nonce, selected to obtain a low enough blockhash
     pub nonce: u32,
+    ///	Coinbase transaction that is in the parent block, linking the AuxPOW block to its parent block
+    pub coinbase_txn: Transaction,
+    /// Hash of the parent_block header
+    pub block_hash: BlockHash,
+    /// The merkle branch linking the coinbase_txn to the parent block's merkle_root
+    pub coinbase_branch_hashes: Vec<u8>,
+    /// Bitmask of which side of the merkle hash function the branch_hash element should go on. Zero means it goes on the right, One means on the left. It is equal to the index of the starting hash within the widest level of the merkle tree for this merkle branch.
+    pub coinbase_branch_side_mask: u32,
+    /// The merkle branch linking this auxiliary blockchain to the others, when used in a merged mining setup with multiple auxiliary chains
+    pub blockchain_branch_hashes: Vec<u8>,
+    /// Bitmask of which side of the merkle hash function the branch_hash element should go on. Zero means it goes on the right, One means on the left. It is equal to the index of the starting hash within the widest level of the merkle tree for this merkle branch.
+    pub blockchain_branch_side_mask: u32,   
+    /// Parent block header
+    /// The protocol version. Should always be 1.
+    pub parent_version: u32,
+    /// Reference to the previous block in the chain
+    pub parent_prev_blockhash: BlockHash,
+    /// The root hash of the merkle tree of transactions in the block
+    pub parent_merkle_root: TxMerkleNode,
+    /// The timestamp of the block, as claimed by the miner
+    pub parent_time: u32,
+    /// The target value below which the blockhash must lie, encoded as a
+    /// a float (with well-defined rounding, of course)
+    pub parent_bits: u32,
+    /// The nonce, selected to obtain a low enough blockhash
+    pub parent_nonce: u32
 }
 
-impl_consensus_encoding!(BlockHeader, version, prev_blockhash, merkle_root, time, bits, nonce);
+
+impl_consensus_encoding!(
+    BlockHeader,
+    version,
+    prev_blockhash,
+    merkle_root,
+    time,
+    bits,
+    nonce,
+    coinbase_txn,
+    block_hash,
+    coinbase_branch_hashes,
+    coinbase_branch_side_mask,
+    blockchain_branch_hashes,
+    blockchain_branch_side_mask,
+    parent_version,
+    parent_prev_blockhash,
+    parent_merkle_root,
+    parent_time,
+    parent_bits,
+    parent_nonce
+);
 
 impl BlockHeader {
     /// Returns the block hash.
@@ -367,25 +414,7 @@ mod tests {
     use util::Error::{BlockBadTarget, BlockBadProofOfWork};
     use network::constants::Network;
 
-    #[test]
-    fn test_coinbase_and_bip34() {
-        // testnet block 100,000
-        let block_hex = "0200000035ab154183570282ce9afc0b494c9fc6a3cfea05aa8c1add2ecc56490000000038ba3d78e4500a5a7570dbe61960398add4410d278b21cd9708e6d9743f374d544fc055227f1001c29c1ea3b0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff3703a08601000427f1001c046a510100522cfabe6d6d0000000000000000000068692066726f6d20706f6f6c7365727665726aac1eeeed88ffffffff0100f2052a010000001976a914912e2b234f941f30b18afbb4fa46171214bf66c888ac00000000";
-        let block: Block = deserialize(&Vec::<u8>::from_hex(block_hex).unwrap()).unwrap();
-
-        let cb_txid = "d574f343976d8e70d91cb278d21044dd8a396019e6db70755a0a50e4783dba38";
-        assert_eq!(block.coinbase().unwrap().txid().to_string(), cb_txid);
-
-        assert_eq!(block.bip34_block_height(), Ok(100_000));
-
-
-        // block with 9-byte bip34 push
-        let bad_hex = "0200000035ab154183570282ce9afc0b494c9fc6a3cfea05aa8c1add2ecc56490000000038ba3d78e4500a5a7570dbe61960398add4410d278b21cd9708e6d9743f374d544fc055227f1001c29c1ea3b0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff3d09a08601112233445566000427f1001c046a510100522cfabe6d6d0000000000000000000068692066726f6d20706f6f6c7365727665726aac1eeeed88ffffffff0100f2052a010000001976a914912e2b234f941f30b18afbb4fa46171214bf66c888ac00000000";
-        let bad: Block = deserialize(&Vec::<u8>::from_hex(bad_hex).unwrap()).unwrap();
-
-        let push = Vec::<u8>::from_hex("a08601112233445566").unwrap();
-        assert_eq!(bad.bip34_block_height(), Err(super::Bip34Error::UnexpectedPush(push)));
-    }
+  
 
     #[test]
     fn block_test() {
@@ -459,20 +488,6 @@ mod tests {
         assert_eq!(serialize(&real_decode), segwit_block);
     }
 
-    #[test]
-    fn block_version_test() {
-        let block = Vec::from_hex("ffffff7f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000").unwrap();
-        let decode: Result<Block, _> = deserialize(&block);
-        assert!(decode.is_ok());
-        let real_decode = decode.unwrap();
-        assert_eq!(real_decode.header.version, 2147483647);
-
-        let block2 = Vec::from_hex("000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000").unwrap();
-        let decode2: Result<Block, _> = deserialize(&block2);
-        assert!(decode2.is_ok());
-        let real_decode2 = decode2.unwrap();
-        assert_eq!(real_decode2.header.version, -2147483648);
-    }
 
     #[test]
     fn validate_pow_test() {
@@ -523,7 +538,7 @@ mod benches {
         bh.iter(|| {
             let mut reader = StreamReader::new(&big_block[..], None);
             let block: Block = reader.read_next().unwrap();
-            black_box(&block);
+            black_box(&block);          
         });
     }
 

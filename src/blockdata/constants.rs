@@ -22,6 +22,7 @@
 use prelude::*;
 
 use core::default::Default;
+use hash_types::BlockHash;
 
 use hashes::hex::{HexIterator, Error as HexError};
 use hashes::sha256d;
@@ -120,6 +121,8 @@ pub fn genesis_block(network: Network) -> Block {
     let txdata = vec![bitcoin_genesis_tx()];
     let hash: sha256d::Hash = txdata[0].txid().into();
     let merkle_root = hash.into();
+    let empty_block_hash: BlockHash = hash.into();
+    
     match network {
         Network::Bitcoin => {
             Block {
@@ -129,7 +132,19 @@ pub fn genesis_block(network: Network) -> Block {
                     merkle_root,
                     time: 1369199888,
                     bits: 0x1e0ffff0,
-                    nonce: 11288888
+                    nonce: 11288888,
+                    coinbase_txn: bitcoin_genesis_tx(),
+                    block_hash: empty_block_hash,
+                    coinbase_branch_hashes: vec![0; 1],
+                    coinbase_branch_side_mask: 0,
+                    blockchain_branch_hashes: vec![0; 1],
+                    blockchain_branch_side_mask: 0,
+                    parent_version: 0,
+                    parent_prev_blockhash: empty_block_hash,
+                    parent_merkle_root: merkle_root,
+                    parent_time: 0,
+                    parent_bits: 0,
+                    parent_nonce: 0
                 },
                 txdata,
             }
@@ -142,7 +157,19 @@ pub fn genesis_block(network: Network) -> Block {
                     merkle_root,
                     time: 1369199888,
                     bits: 0x1e0ffff0,
-                    nonce: 11288888
+                    nonce: 11288888,
+                    coinbase_txn: bitcoin_genesis_tx(),
+                    block_hash: empty_block_hash,
+                    coinbase_branch_hashes: vec![0; 1],
+                    coinbase_branch_side_mask: 0,
+                    blockchain_branch_hashes: vec![0; 1],
+                    blockchain_branch_side_mask: 0,
+                    parent_version: 0,
+                    parent_prev_blockhash: empty_block_hash,
+                    parent_merkle_root: merkle_root,
+                    parent_time: 0,
+                    parent_bits: 0,
+                    parent_nonce: 0
                 },
                 txdata,
             }
@@ -155,7 +182,19 @@ pub fn genesis_block(network: Network) -> Block {
                     merkle_root,
                     time: 1369199888,
                     bits: 0x1e0ffff0,
-                    nonce: 11288888
+                    nonce: 11288888,
+                    coinbase_txn: bitcoin_genesis_tx(),
+                    block_hash: empty_block_hash,
+                    coinbase_branch_hashes: vec![0; 1],
+                    coinbase_branch_side_mask: 0,
+                    blockchain_branch_hashes: vec![0; 1],
+                    blockchain_branch_side_mask: 0,
+                    parent_version: 0,
+                    parent_prev_blockhash: empty_block_hash,
+                    parent_merkle_root: merkle_root,
+                    parent_time: 0,
+                    parent_bits: 0,
+                    parent_nonce: 0
                 },
                 txdata,
             }
@@ -168,7 +207,19 @@ pub fn genesis_block(network: Network) -> Block {
                     merkle_root,
                     time: 1369199888,
                     bits: 0x1e0ffff0,
-                    nonce: 11288888
+                    nonce: 11288888,
+                    coinbase_txn: bitcoin_genesis_tx(),
+                    block_hash: empty_block_hash,
+                    coinbase_branch_hashes: vec![0; 1],
+                    coinbase_branch_side_mask: 0,
+                    blockchain_branch_hashes: vec![0; 1],
+                    blockchain_branch_side_mask: 0,
+                    parent_version: 0,
+                    parent_prev_blockhash: empty_block_hash,
+                    parent_merkle_root: merkle_root,
+                    parent_time: 0,
+                    parent_bits: 0,
+                    parent_nonce: 0
                 },
                 txdata,
             }
