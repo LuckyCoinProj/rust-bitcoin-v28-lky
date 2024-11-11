@@ -38,7 +38,7 @@ macro_rules! impl_hashencode {
         }
     }
 }
-
+hash_newtype!(StdHash, sha256d::Hash, 32, doc="Standard u32 byte array to be used for auxpow.");
 hash_newtype!(Txid, sha256d::Hash, 32, doc="A bitcoin transaction hash/transaction ID.");
 hash_newtype!(Wtxid, sha256d::Hash, 32, doc="A bitcoin witness transaction ID.");
 hash_newtype!(BlockHash, sha256d::Hash, 32, doc="A bitcoin block hash.");
@@ -57,6 +57,7 @@ hash_newtype!(XpubIdentifier, hash160::Hash, 20, doc="XpubIdentifier as defined 
 hash_newtype!(FilterHash, sha256d::Hash, 32, doc="Filter hash, as defined in BIP-157");
 hash_newtype!(FilterHeader, sha256d::Hash, 32, doc="Filter header, as defined in BIP-157");
 
+impl_hashencode!(StdHash);
 
 impl_hashencode!(Txid);
 impl_hashencode!(Wtxid);
